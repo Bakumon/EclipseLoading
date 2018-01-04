@@ -1,5 +1,8 @@
 # EclipseLoading
+
 🌞 日食加载动画
+
+设计来自[1982200-Solar-Eclipse](https://dribbble.com/shots/1982200-Solar-Eclipse)
 
 ## 预览
 
