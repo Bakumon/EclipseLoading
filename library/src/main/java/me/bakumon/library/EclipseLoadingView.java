@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -30,13 +31,13 @@ public class EclipseLoadingView extends View {
      */
     private static final int STATE_ROTATE = 1;
     /**
+     * 恢复过程
+     */
+    private static final int STATE_RECOVER = 2;
+    /**
      * view 默认宽高
      */
     private int defaultSize;
-    /**
-     * 宽高
-     */
-    private int size;
     /**
      * 中心点坐标，xy
      */
@@ -46,7 +47,7 @@ public class EclipseLoadingView extends View {
      */
     private int radius;
     /**
-     *
+     * 圈圈线条的宽度
      */
     private int arcWidth;
     /**
@@ -54,21 +55,37 @@ public class EclipseLoadingView extends View {
      */
     private int colorSun;
     /**
-     * 背景颜色
-     */
-    private int colorBackground;
-    /**
      * @see EclipseLoadingView#STATE_ECLIPSE
      * @see EclipseLoadingView#STATE_ROTATE
+     * @see EclipseLoadingView#STATE_RECOVER
      * 为了在 onDraw 中不绘制看不到的部分
      */
     private int status;
 
     private Paint paint;
-    private Path path;
+    /**
+     * 裁剪绘画区域
+     */
+    private Path canvasClipPath;
+    /**
+     * 日食过程移动的 path
+     */
+    private Path eclipseClipPath;
+    /**
+     * 恢复过程移动的 path
+     */
+    private Path recoverClipPath;
+    /**
+     * 圈圈过程圆弧相关
+     */
     private RectF rectF;
-
-    private float eclipseX;
+    /**
+     * 日食和恢复过程 path 移动的 offset
+     */
+    private float eclipseOffsetX;
+    /**
+     * 圈圈过程圆弧显示的角度
+     */
     private float eclipseSweepAngle;
     private AnimatorSet animatorSet;
 
@@ -82,6 +99,9 @@ public class EclipseLoadingView extends View {
 
     public EclipseLoadingView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.EclipseLoadingView);
+        colorSun = a.getColor(R.styleable.EclipseLoadingView_sunColor, Color.parseColor("#FDAC2A"));
+        a.recycle();
         init();
     }
 
@@ -89,9 +109,7 @@ public class EclipseLoadingView extends View {
         paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
         defaultSize = dp2px(60);
-        arcWidth = dp2px(5);
-        colorSun = Color.parseColor("#FDAC2A");
-        colorBackground = Color.parseColor("#ffffff");
+        arcWidth = dp2px(2);
     }
 
     @Override
@@ -121,42 +139,55 @@ public class EclipseLoadingView extends View {
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         // 宽和高相等
-        size = w;
-        center = size / 2;
+        center = w / 2;
         int bottom = getPaddingBottom();
         int top = getPaddingTop();
         int right = getPaddingRight();
         int left = getPaddingLeft();
         // 最大内边距
         int maxPadding = Math.max(Math.max(Math.max(bottom, top), right), left);
-        radius = size / 2 - maxPadding;
-        rectF = new RectF(maxPadding, maxPadding, size - maxPadding, size - maxPadding);
-        path = new Path();
-        path.addCircle(size / 2, size / 2, size / 2, Path.Direction.CW);
+        radius = w / 2 - maxPadding;
+        rectF = new RectF(maxPadding + arcWidth, maxPadding + arcWidth, w - maxPadding - arcWidth, w - maxPadding - arcWidth);
+        canvasClipPath = new Path();
+        canvasClipPath.addCircle(w / 2, w / 2, w / 2, Path.Direction.CW);
+
+        eclipseClipPath = new Path();
+        eclipseClipPath.setFillType(Path.FillType.INVERSE_WINDING);
+        eclipseClipPath.addCircle(center + radius * 2, center, radius, Path.Direction.CW);
+
+        recoverClipPath = new Path();
+        recoverClipPath.setFillType(Path.FillType.INVERSE_WINDING);
+        recoverClipPath.addCircle(center, center, radius, Path.Direction.CW);
 
         initAnimator();
     }
 
     private void initAnimator() {
-        status = STATE_ECLIPSE;
-        ValueAnimator animator1 = ValueAnimator.ofFloat(size / 2 + (radius) * 2, size / 2);
+        // animator1 日食过程
+        ValueAnimator animator1 = ValueAnimator.ofFloat(0, -((radius) * 2));
         animator1.setDuration(2000);
+        animator1.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                status = STATE_ECLIPSE;
+            }
+        });
         animator1.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
-                setEclipseX((Float) animation.getAnimatedValue());
-            }
-        });
-        animator1.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                super.onAnimationEnd(animation);
-                status = STATE_ROTATE;
+                setEclipseOffsetX((Float) animation.getAnimatedValue());
             }
         });
 
+        // animator2 animator3 转圈过程
         ValueAnimator animator2 = ValueAnimator.ofFloat(0, -360);
         animator2.setDuration(400);
+        animator2.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                status = STATE_ROTATE;
+            }
+        });
         animator2.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
@@ -172,20 +203,20 @@ public class EclipseLoadingView extends View {
                 setEclipseSweepAngle((Float) animation.getAnimatedValue());
             }
         });
-        animator3.addListener(new AnimatorListenerAdapter() {
+
+        // animator4 恢复过程
+        ValueAnimator animator4 = ValueAnimator.ofFloat(0, -((radius) * 2));
+        animator4.setDuration(2000);
+        animator4.addListener(new AnimatorListenerAdapter() {
             @Override
-            public void onAnimationEnd(Animator animation) {
-                super.onAnimationEnd(animation);
-                status = STATE_ECLIPSE;
+            public void onAnimationStart(Animator animation) {
+                status = STATE_RECOVER;
             }
         });
-
-        ValueAnimator animator4 = ValueAnimator.ofFloat(size / 2, size / 2 - (radius) * 2);
-        animator4.setDuration(2000);
         animator4.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
-                setEclipseX((Float) animation.getAnimatedValue());
+                setEclipseOffsetX((Float) animation.getAnimatedValue());
             }
         });
 
@@ -200,8 +231,8 @@ public class EclipseLoadingView extends View {
         animatorSet.start();
     }
 
-    private void setEclipseX(float eclipseX) {
-        this.eclipseX = eclipseX;
+    private void setEclipseOffsetX(float eclipseOffsetX) {
+        this.eclipseOffsetX = eclipseOffsetX;
         invalidate();
     }
 
@@ -219,26 +250,59 @@ public class EclipseLoadingView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.clipPath(path);
-        if (status == 0) {
-            // 太阳
-            paint.setStyle(Paint.Style.FILL);
-            paint.setStrokeWidth(0);
-            paint.setColor(colorSun);
-            canvas.drawCircle(center, center, radius, paint);
-            // 月亮
-            paint.setColor(colorBackground);
-            canvas.drawCircle(eclipseX, center, radius, paint);
-        } else if (status == 1) {
+        canvas.clipPath(canvasClipPath);
+        if (status == STATE_ROTATE) {
             // 圈圈
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(arcWidth);
-            paint.setColor(colorSun);
-            canvas.drawArc(rectF, -90, eclipseSweepAngle, false, paint);
+            drawRotate(canvas);
+        } else {
+            if (status == STATE_ECLIPSE) {
+                // 日食过程
+                drawEclipse(canvas, eclipseClipPath);
+            } else {
+                // 恢复过程
+                drawEclipse(canvas, recoverClipPath);
+            }
         }
     }
 
-    public int dp2px(float dipValue) {
+    /**
+     * 画圈圈
+     */
+    private void drawRotate(Canvas canvas) {
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(arcWidth);
+        paint.setColor(colorSun);
+        canvas.drawArc(rectF, -90, eclipseSweepAngle, false, paint);
+    }
+
+    /**
+     * 日食或恢复过程
+     *
+     * @param eclipsePath eclipseClipPath：日食过程 recoverClipPath：恢复过程
+     */
+    private void drawEclipse(Canvas canvas, Path eclipsePath) {
+        canvas.save();
+        eclipsePath.offset(eclipseOffsetX, 0);
+        eclipsePath.moveTo(center, center);
+        canvas.clipPath(eclipsePath);
+        eclipsePath.offset(-eclipseOffsetX, 0);
+        // 太阳
+        paint.setStyle(Paint.Style.FILL);
+        paint.setStrokeWidth(0);
+        paint.setColor(colorSun);
+        canvas.drawCircle(center, center, radius, paint);
+        canvas.restore();
+    }
+
+    public int getColorSun() {
+        return colorSun;
+    }
+
+    public void setColorSun(int colorSun) {
+        this.colorSun = colorSun;
+    }
+
+    private int dp2px(float dipValue) {
         float density = getContext().getResources().getDisplayMetrics().density;
         return (int) (dipValue * density + 0.5f);
     }

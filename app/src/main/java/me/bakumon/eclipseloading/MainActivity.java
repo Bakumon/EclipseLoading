@@ -2,6 +2,9 @@ package me.bakumon.eclipseloading;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
+
+import me.bakumon.library.EclipseLoadingView;
 
 /**
  * @author Bakumon https://bakumon.me
@@ -14,5 +17,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+    }
+
+    public void click(View view) {
+        ((EclipseLoadingView)view).setColorSun(getResources().getColor(R.color.colorAccent));
     }
 }
