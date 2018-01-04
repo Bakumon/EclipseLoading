@@ -147,9 +147,11 @@ public class EclipseLoadingView extends View {
         // 最大内边距
         int maxPadding = Math.max(Math.max(Math.max(bottom, top), right), left);
         radius = w / 2 - maxPadding;
-        rectF = new RectF(maxPadding + arcWidth, maxPadding + arcWidth, w - maxPadding - arcWidth, w - maxPadding - arcWidth);
+        int rectFLeftTop = maxPadding + arcWidth;
+        int rectFRightBottom = w - maxPadding - arcWidth;
+        rectF = new RectF(rectFLeftTop, rectFLeftTop, rectFRightBottom, rectFRightBottom);
         canvasClipPath = new Path();
-        canvasClipPath.addCircle(w / 2, w / 2, w / 2, Path.Direction.CW);
+        canvasClipPath.addCircle(center, center, center, Path.Direction.CW);
 
         eclipseClipPath = new Path();
         eclipseClipPath.setFillType(Path.FillType.INVERSE_WINDING);
