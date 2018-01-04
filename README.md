@@ -24,7 +24,7 @@
     android:layout_height="wrap_content" />
 ```
 
-** 设置太阳颜色 **
+**设置太阳颜色**
 
 1. 自定义属性
 
