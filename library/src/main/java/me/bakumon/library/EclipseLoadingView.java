@@ -110,6 +110,7 @@ public class EclipseLoadingView extends View {
 
         defaultSize = dp2px(60);
         arcWidth = dp2px(2);
+        paint.setStrokeWidth(arcWidth);
     }
 
     @Override
@@ -272,7 +273,6 @@ public class EclipseLoadingView extends View {
      */
     private void drawRotate(Canvas canvas) {
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(arcWidth);
         paint.setColor(colorSun);
         canvas.drawArc(rectF, -90, eclipseSweepAngle, false, paint);
     }
@@ -285,12 +285,10 @@ public class EclipseLoadingView extends View {
     private void drawEclipse(Canvas canvas, Path eclipsePath) {
         canvas.save();
         eclipsePath.offset(eclipseOffsetX, 0);
-        eclipsePath.moveTo(center, center);
         canvas.clipPath(eclipsePath);
         eclipsePath.offset(-eclipseOffsetX, 0);
         // 太阳
         paint.setStyle(Paint.Style.FILL);
-        paint.setStrokeWidth(0);
         paint.setColor(colorSun);
         canvas.drawCircle(center, center, radius, paint);
         canvas.restore();
