@@ -21,8 +21,7 @@
 ```xml
 <me.bakumon.library.EclipseLoadingView
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    app:sunColor="@color/colorAccent"/>
+    android:layout_height="wrap_content"/>
 ```
 
 **设置太阳颜色**
