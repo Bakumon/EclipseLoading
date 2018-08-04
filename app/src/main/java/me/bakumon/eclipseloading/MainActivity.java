@@ -20,6 +20,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void click(View view) {
-        ((EclipseLoadingView)view).setColorSun(getResources().getColor(R.color.colorAccent));
+        ((EclipseLoadingView)view).setSunColor(getResources().getColor(R.color.colorAccent));
     }
 }

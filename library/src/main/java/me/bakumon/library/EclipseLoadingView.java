@@ -53,7 +53,7 @@ public class EclipseLoadingView extends View {
     /**
      * 太阳颜色
      */
-    private int colorSun;
+    private int mSunColor;
     /**
      * @see EclipseLoadingView#STATE_ECLIPSE
      * @see EclipseLoadingView#STATE_ROTATE
@@ -100,7 +100,7 @@ public class EclipseLoadingView extends View {
     public EclipseLoadingView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.EclipseLoadingView);
-        colorSun = a.getColor(R.styleable.EclipseLoadingView_sunColor, Color.parseColor("#FDAC2A"));
+        mSunColor = a.getColor(R.styleable.EclipseLoadingView_sunColor, Color.parseColor("#FDAC2A"));
         a.recycle();
         init();
     }
@@ -273,7 +273,7 @@ public class EclipseLoadingView extends View {
      */
     private void drawRotate(Canvas canvas) {
         paint.setStyle(Paint.Style.STROKE);
-        paint.setColor(colorSun);
+        paint.setColor(mSunColor);
         canvas.drawArc(rectF, -90, eclipseSweepAngle, false, paint);
     }
 
@@ -289,17 +289,17 @@ public class EclipseLoadingView extends View {
         eclipsePath.offset(-eclipseOffsetX, 0);
         // 太阳
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(colorSun);
+        paint.setColor(mSunColor);
         canvas.drawCircle(center, center, radius, paint);
         canvas.restore();
     }
 
-    public int getColorSun() {
-        return colorSun;
+    public int getSunColor() {
+        return mSunColor;
     }
 
-    public void setColorSun(int colorSun) {
-        this.colorSun = colorSun;
+    public void setSunColor(int sunColor) {
+        this.mSunColor = sunColor;
     }
 
     private int dp2px(float dipValue) {
