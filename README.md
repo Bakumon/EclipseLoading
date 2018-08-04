@@ -21,7 +21,8 @@
 ```xml
 <me.bakumon.library.EclipseLoadingView
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content" />
+    android:layout_height="wrap_content"
+    app:sunColor="@color/colorAccent"/>
 ```
 
 **设置太阳颜色**
@@ -35,5 +36,5 @@ app:sunColor="@color/colorAccent"
 2. java 代码
 
 ```java
-eclipseLoadingView.setColorSun(sunColor);
+eclipseLoadingView.setSunColor(sunColor);
 ```
